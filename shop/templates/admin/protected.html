@@ -1,0 +1,51 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container">
+    <h1>Verifying Token...</h1>
+    <p>Please wait while we verify your credentials.</p>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        
+        if (token) {
+            localStorage.setItem('jwt_token', token);
+            console.log('Token saved:', token);
+        }
+
+        const storedToken = localStorage.getItem('jwt_token');
+        if (!storedToken) {
+            console.error('No token found');
+            return;
+        }
+
+        fetch('http://127.0.0.1:5000/protected', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${storedToken}`
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Failed to verify token');
+            }
+        })
+        .then(data => {
+            console.log('Response:', data);
+            if (data.logged_in_as) {
+                window.location.href = 'http://127.0.0.1:5000/';  // Redirect to home page
+            } else {
+                console.error('Token verification failed');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+        });
+    });
+</script>
+{% endblock content %}

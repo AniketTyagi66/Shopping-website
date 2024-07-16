@@ -7,6 +7,7 @@ import secrets, os
 import pdfkit
 import stripe
 from shop.products.routes import brands,categories
+from shop.products.forms import CSRFForm
 
 # Path to wkhtmltopdf executable
 path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'  # Update this path if needed
@@ -129,6 +130,7 @@ def orders(invoice):
             subTotal = 0.0
             grandTotal = 0.0
 
+            form = CSRFForm()
             for _key, product in orders_data.items():
                 discount = (product.get('discount', 0) / 100) * float(product.get('price', 0))
                 subTotal += (float(product.get('price', 0)) - discount) * int(product.get('quantity', 0))
@@ -138,7 +140,7 @@ def orders(invoice):
             grandTotal = ("%.2f" % (1.06 * float(subTotal)))
 
             return render_template('customer/order.html', invoice=invoice, tax=tax, subTotal=subTotal, grandTotal=grandTotal, customer=customer, orders_data=orders_data,orders=orders,
-                                   brands=brands(),categories=categories())
+                                   brands=brands(),categories=categories(),form=form)
         else:
             flash("Order not found", "error")
             return redirect(url_for('customerLogin'))
@@ -156,6 +158,7 @@ def get_pdf(invoice):
         tax=0
         customer_id=current_user.id
         if request.method == "POST":
+            form = CSRFForm()
             customer = Register.query.filter_by(id=customer_id).first()
             orders = CustomerOrder.query.filter_by(customer_id=customer_id, invoice=invoice).first()
             orders_data = json.loads(orders.orders)
@@ -167,7 +170,7 @@ def get_pdf(invoice):
             grandTotal = subTotal * 1.06
 
             rendered = render_template('customer/pdf.html',invoice=invoice, tax=tax, grandTotal=grandTotal,
-                                customer=customer,orders_data=orders_data,orders=orders)
+                                customer=customer,orders_data=orders_data,orders=orders,form=form)
             pdf = pdfkit.from_string(rendered, False,configuration=config)
             response = make_response(pdf)
             response.headers['content-Type'] = 'application/pdf'

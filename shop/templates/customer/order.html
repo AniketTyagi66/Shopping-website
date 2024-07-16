@@ -38,6 +38,7 @@
                     <td>{{loop.index}}</td>
                     <td>{{product.name}}</td>
                     <form action="{{url_for('updatecart', code =key)}}" method="post">
+                        {{ form.hidden_tag() }}
                     <td>
                        {{product.color|capitalize}}
                     </td>
@@ -64,6 +65,7 @@
                     {% if orders.status =='Paid' %}
                     {% else %}
                     <form action="{{url_for('payment')}}" method="post">
+                        {{ form.hidden_tag() }}
                         {% set amount = grandTotal.replace('.','') %}
                         <input type="hidden" name="amount" value="{{amount}}">
                         <input type="hidden" name="invoice" value="{{orders.invoice}}">
@@ -85,6 +87,7 @@
                 
                 <td>
                     <form action="{{url_for('get_pdf', invoice=orders.invoice)}}" method="post">
+                        {{ form.hidden_tag() }}
                         <button type="submit" class="btn btn-info">Get PDF</button>
                     </form>
                 </td>

@@ -22,6 +22,7 @@
             <p>{{product.desc}}</p>
             <hr>
             <form action="{{ url_for('AddCart') }}" method="POST">
+                {{ form.hidden_tag() }}
                 <input type="hidden" name="product_id" value="{{ product.id }}">
                 <button type="submit" class="btn btn-sm btn-warning">Add Cart</button>
                 <label for="">Quantity:</label>

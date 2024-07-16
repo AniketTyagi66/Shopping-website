@@ -48,6 +48,7 @@
                     <td>{{loop.index}}</td>
                     <td>{{product.name}}</td>
                     <form action="{{url_for('updatecart', code =key)}}" method="post">
+                        {{ form.hidden_tag() }}
                     <td>
                        {{product.color|capitalize}}
                     </td>

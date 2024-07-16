@@ -8,12 +8,14 @@
         {% if brands %}
         <h1 class="text-center mt-5">Add a brand</h1>
         <form action="" method="POST">
+            {{ form.hidden_tag() }}
             <input type="text" name="brand" class="form-control">
             <input type="submit" value="Add brand" class="btn btn-info mt-2">
         </form>
         {% else %}
         <h1 class="text-center mt-5">Add a category</h1>
         <form action="" method="POST">
+            {{ form.hidden_tag() }}
             <input type="text" name="category" class="form-control">
             <input type="submit" value="Add category" class="btn btn-info mt-2">
         </form>

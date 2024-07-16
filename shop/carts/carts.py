@@ -2,6 +2,7 @@ from flask import redirect, render_template, url_for, request, flash, session, c
 from shop import db, app, photos
 from shop.products.models import Addproduct
 from shop.products.routes import brands,categories
+from shop.products.forms import CSRFForm
 
 
 def MergeDicts(dict1,dict2):
@@ -14,31 +15,38 @@ def MergeDicts(dict1,dict2):
 
 @app.route('/addcart', methods=['POST'])
 def AddCart():
-    try:
-        product_id=request.form.get('product_id')
-        quantity=int(request.form.get('quantity'))
-        colors=request.form.get('colors')
-        product=Addproduct.query.filter_by(id=product_id).first()
-        if product_id and quantity and colors and request.method == 'POST':
-            DictItems = {product_id:{'name': product.name, 'price': product.price, 'discount': product.discount, 'color':colors, 'quantity':quantity,'image':product.image_1, 'colors': product.colors}}
-            if 'Shoppingcart' in session:
-                print(session['Shoppingcart'])
-                if product_id in session['Shoppingcart']:
-                    for key, item in session['Shoppingcart'].items():
-                        if int(key) == int(product_id):
-                            session.modified=True
-                            item['quantity'] += 1
-                else:
-                    session['Shoppingcart'] = MergeDicts(session['Shoppingcart'], DictItems)
-                    return redirect(request.referrer)
-            else:
-                session['Shoppingcart']=DictItems
-                return redirect(request.referrer)
+    form = CSRFForm()
+    if form.validate_on_submit():
+        try:
+            product_id = request.form.get('product_id')
+            quantity = int(request.form.get('quantity'))
+            colors = request.form.get('colors')
+            product = Addproduct.query.filter_by(id=product_id).first()
             
-    except Exception as e:
-        print(e)
-    finally:
-        return redirect(request.referrer)
+            if product_id and quantity and colors and request.method == 'POST':
+                DictItems = {
+                    product_id: {
+                        'name': product.name, 'price': product.price, 'discount': product.discount, 
+                        'color': colors, 'quantity': quantity, 'image': product.image_1, 'colors': product.colors
+                    }
+                }
+                if 'Shoppingcart' in session:
+                    if product_id in session['Shoppingcart']:
+                        for key, item in session['Shoppingcart'].items():
+                            if int(key) == int(product_id):
+                                session.modified = True
+                                item['quantity'] += 1
+                    else:
+                        session['Shoppingcart'] = MergeDicts(session['Shoppingcart'], DictItems)
+                else:
+                    session['Shoppingcart'] = DictItems
+                
+                return redirect(request.referrer)
+        
+        except Exception as e:
+            print(e)
+    
+    return redirect(request.referrer)
     
 
 @app.route('/carts')
@@ -47,6 +55,7 @@ def getCart():
         return redirect(url_for('home'))
     subtotal = 0
     grandtotal = 0
+    form = CSRFForm()
     for key, product in session['Shoppingcart'].items():
         discount = (product['discount']/100) * float(product['price'])
         subtotal += float(product['price']) * int(product['quantity'])
@@ -54,7 +63,7 @@ def getCart():
         tax = ("%0.2f" % (.06 * float(subtotal)))
         grandtotal = float("%0.2f" % (1.06 * subtotal))
 
-    return render_template('products/carts.html', tax=tax, grandtotal=grandtotal,brands=brands(),categories=categories())
+    return render_template('products/carts.html', tax=tax, grandtotal=grandtotal,brands=brands(),categories=categories(),form=form)
 
 
 # @app.route('/empty')

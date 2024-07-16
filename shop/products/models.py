@@ -10,7 +10,8 @@ class Addproduct(db.Model):
     price = db.Column(db.Numeric(10,2), nullable=False)
     discount = db.Column(db.Integer, default=0)
     stock = db.Column(db.Integer, nullable=False)
-    colors = db.Column(db.Integer, nullable=False)
+    # colors = db.Column(db.Integer, nullable=False)\
+    colors = db.Column(db.String(255), nullable=False)
     desc = db.Column(db.Text, nullable=False)
     pub_date = db.Column(db.DateTime, nullable=False,
         default=datetime.utcnow)

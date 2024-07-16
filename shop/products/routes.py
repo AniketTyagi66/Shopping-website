@@ -1,7 +1,7 @@
 from flask import redirect, render_template, url_for, request, flash, session, current_app
 from shop import db, app, photos, search
 from .models import Brand, Category, Addproduct
-from .forms import Addproducts
+from .forms import Addproducts,CSRFForm
 import secrets, os
 
 
@@ -18,36 +18,43 @@ def categories():
 
 @app.route('/')
 def home():
+    if 'email' not in session:
+        return redirect(url_for('login'))
+    form = CSRFForm()
     page = request.args.get('page', 1, type=int)
     products=Addproduct.query.filter(Addproduct.stock > 0).order_by(Addproduct.id.desc()).paginate(page=page, per_page=4)
-    return render_template("products/index.html", products=products,brands=brands(),categories=categories())
+    return render_template("products/index.html", products=products,brands=brands(),categories=categories(),form=form)
 
 @app.route('/result')
 def result():
+    form = CSRFForm()
     searchword = request.args.get('q')
     products=Addproduct.query.msearch(searchword, fields=['name','desc'], limit=6)
-    return render_template("products/result.html", products=products, brands=brands(),categories=categories())
+    return render_template("products/result.html", products=products, brands=brands(),categories=categories(),form=form)
 
 
 @app.route('/product/<int:id>')
 def single_page(id):
+    form = CSRFForm()
     product=Addproduct.query.get_or_404(id)
-    return render_template("products/single_page.html",product=product,brands=brands(),categories=categories())
+    return render_template("products/single_page.html",product=product,brands=brands(),categories=categories(),form=form)
 
 
 @app.route('/brand/<int:id>')
 def get_brand(id):
+    form = CSRFForm()
     get_b=Brand.query.filter_by(id=id).first_or_404()
     page = request.args.get('page', 1, type=int)
     brand = Addproduct.query.filter_by(brand=get_b).paginate(page=page, per_page=4)
-    return render_template("products/index.html", brand=brand, brands=brands(), categories=categories(),get_b=get_b)
+    return render_template("products/index.html", brand=brand, brands=brands(), categories=categories(),get_b=get_b,form=form)
 
 @app.route('/categories/<int:id>')
 def get_category(id):
+    form = CSRFForm()
     page = request.args.get('page', 1, type=int)
     get_cat= Category.query.filter_by(id=id).first_or_404()
     get_cat_prod = Addproduct.query.filter_by(category=get_cat).paginate(page=page, per_page=4)
-    return render_template("products/index.html", get_cat_prod=get_cat_prod, categories=categories(),brands=brands(), get_cat=get_cat)
+    return render_template("products/index.html", get_cat_prod=get_cat_prod, categories=categories(),brands=brands(), get_cat=get_cat,form=form)
 
     
 @app.route('/addbrand', methods=['GET','POST'])
@@ -56,14 +63,15 @@ def addbrand():
         flash(f'Please login first', 'danger')
         return redirect(url_for('login'))
     
-    if request.method=="POST":
+    form = CSRFForm()
+    if request.method=="POST" and form.validate_on_submit():
         getbrand = request.form.get('brand')
         brand = Brand(name=getbrand)
         db.session.add(brand)
         flash(f'The Brand {getbrand} added to your database', 'success')
         db.session.commit()
         return redirect(url_for('addbrand'))
-    return render_template('products/addbrand.html', brands='brand')
+    return render_template('products/addbrand.html', brands='brand',form=form)
 
 @app.route('/updatebrand/<int:id>', methods=['GET','POST'])
 def updatebrand(id):
@@ -72,13 +80,14 @@ def updatebrand(id):
         # return redirect(url_for('login'))
     updatebrand = Brand.query.get_or_404(id)
     brand = request.form.get('brand')
+    form = CSRFForm()
     if request.method=="POST":
         updatebrand.name = brand
         # db.session.add(brand)
         flash(f'Your Brand has been updated', 'success')
         db.session.commit()
         return redirect(url_for('brands'))
-    return render_template('products/updatebrand.html', title='update brand page', updatebrand=updatebrand)
+    return render_template('products/updatebrand.html', title='update brand page', updatebrand=updatebrand,form=form)
 
 
 @app.route('/deletebrand/<int:id>', methods=['POST'])
@@ -100,6 +109,7 @@ def addcat():
         flash(f'Please login first', 'danger')
         return redirect(url_for('login'))
     
+    form = CSRFForm()
     if request.method=="POST":
         getcategory = request.form.get('category')
         cat = Category(name=getcategory)
@@ -107,7 +117,7 @@ def addcat():
         flash(f'The Category {getcategory} added to your database', 'success')
         db.session.commit()
         return redirect(url_for('addcat'))
-    return render_template('products/addbrand.html')
+    return render_template('products/addbrand.html',form=form)
 
 
 @app.route('/updatecat/<int:id>', methods=['GET','POST'])
@@ -117,13 +127,14 @@ def updatecat(id):
         # return redirect(url_for('login'))
     updatecat = Category.query.get_or_404(id)
     category = request.form.get('category')
+    form = CSRFForm()
     if request.method=="POST":
         updatecat.name = category
         # db.session.add(brand)
         flash(f'Your Category has been updated', 'success')
         db.session.commit()
         return redirect(url_for('category'))
-    return render_template('products/updatebrand.html', title='update category page', updatecat=updatecat)
+    return render_template('products/updatebrand.html', title='update category page', updatecat=updatecat,form=form)
 
 
 @app.route('/deletecategory/<int:id>', methods=['POST'])
